@@ -1,0 +1,19 @@
+---
+title: "Eric Han"
+---
+
+Hi! I'm Eric, an M.S. student in Quantitative Methods and Modeling at 
+Baruch College's Zicklin School of Business (expected December 2026).
+
+My background is in Applied Mathematics & Statistics, and I'm interested 
+in the intersection of data science and financial markets. I am currently 
+a CFA Level III candidate.
+
+This site hosts my work for STA 9750.
+
+```{r}
+#| include: false
+1+1
+```
+--------------
+Last Updated: `r format(Sys.time(), "%A %m %d, %Y at %H:%M%p")`
