@@ -153,6 +153,7 @@ In 2026 H1, people spent total `r scales::comma(total_hours_2026h1)` hours on wa
 Data includes NA values in global availability. Excluding NA values, the percentage availability of netflix in global is `r scales::percent(pct_global, accuracy = 0.1)` and the proportion of global title hours viewed against total hours viewed is `r scales::percent(global_by_hours, accuracy = 0.1)`.  
 
 ## Deeper Analysis
+### Top Title by Period
 ```{r}
 library(gt)
 
@@ -170,9 +171,13 @@ squid_release <- NETFLIX_DATA |>
   filter(title == "Squid Game: Season 2") |>
   pull(release_date) |>
   first()
+```
+The most hit netflix period by period is between `r scales::percent(min(top_by_period$share), accuracy = 0.1)`, `r scales::percent(max(top_by_period$share), accuracy = 0.1)`, indicating viewing netflix scatters a lot
 
-head(NETFLIX_DATA)
+Squid Game: Season 2 is successively top 1 in two period, indicating squid game opens late of 2024H2 `r format(squid_release, "%Y-%m-%d")` and last their popularity over two periods.
 
+### Catalog Size
+```{r}
 catalog_size = NETFLIX_DATA |> summarize(n_titles = n_distinct(title), 
                total_runtime_hours = sum(runtime, na.rm = TRUE) / 60,
                pct_runtime_na = mean(is.na(runtime)), .by = period)
@@ -186,7 +191,11 @@ catalog_size |>
     pct_runtime_na = "Runtime Missing") |> fmt_number(c(n_titles, total_runtime_hours), decimals = 0) |>
   fmt_percent(pct_runtime_na, decimals = 1) |>
   tab_source_note("Runtime is missing for some titles and excluded from the total.")
+```
+Period 2023H1 has the most largest number of distinct titles, which is almost triple time to 2023H2 because after 2023H2 netflix seperates data tv and film, so we cannot read film sheet. That is why we cannot compare 2023H1 and other period directly. After that the number of distinct title become bigger over period. Except period 2023H1, total runtime is increased over period with low missing value percentage, indicating making tv catalog in netflix being longer time.
 
+### Staple Titles
+```{r}
 staples = NETFLIX_DATA |> summarize(n_periods = n_distinct(period), mean_hours = mean(hours_viewed),
     min_hours = min(hours_viewed), sd_hours = sd(hours_viewed), .by = title) |>
   filter(n_periods == n_distinct(NETFLIX_DATA$period)) |>
@@ -198,7 +207,11 @@ staples |>
              subtitle = "Titles present in all 7 periods, ranked by their lowest period") |>
   cols_label(title = "Title", mean_hours = "Avg. Hours per Period",min_hours = "Lowest Period",) |>
   fmt_number(c(mean_hours, min_hours), decimals = 0)
+```
+By using min standard instead of mean, I want to eliminate the effect of specific period popularity and select title that shows over all periods. There are three Breaking Bad seasons and two Suit seasons, indicating people watch netflix series not just one seasons, but whole seasons. 
 
+### Shows vs Movies
+```{r}
 netflix_type = NETFLIX_DATA |> mutate(type = if_else(str_detect(title, "Season") | (!is.na(runtime) & runtime > 240),
 "Show", "Movie"))
 netflix_type |> count(type)
@@ -210,7 +223,11 @@ show_share |> gt() |> tab_header(title = "Share of Watch Time: Shows vs Movies",
                                  subtitle = "Shows: title contains 'Season' or runtime over 4 hours") |>
       cols_label(period = "Period", show_share = "Shows", movie_share = "Movies") |>
       fmt_percent(c(show_share, movie_share), decimals = 1)
+```
+We split movies and shows by having title "Season" or running time is over 4 hours. Only period 2023H1 includes shows and movies in one sheet, so shows occupy `r scales::percent(show_share$show_share[show_share$period == "2023H1"], accuracy = 0.1)` and movies occupy `r scales::percent(show_share$movie_share[show_share$period == "2023H1"], accuracy = 0.1)`. However, other periods split shows and movies data. The low percentage of movies in later periods reflects missing data rather than actual viewing behavior, making comparisons across periods unreliable.
 
+### Live Events vs Pre-taped
+```{r}
 live_compare = NETFLIX_DATA |> mutate(content_type = if_else(live_event, "Live", "Pre-taped")) |>
   summarize(n_titles = n(), mean_hours = mean(hours_viewed), median_hours = median(hours_viewed),
             top_hours = quantile(hours_viewed, 0.9), max_hours = max(hours_viewed), .by = content_type)
@@ -220,16 +237,6 @@ live_compare |> gt() |> tab_header(title = "Live Events vs Pre-taped Content",
              mean_hours = "Mean", median_hours = "Median",
              top_hours = "90th Percentile", max_hours = "Max") |>
   fmt_number(c(n_titles, mean_hours, median_hours, top_hours, max_hours), decimals = 0)
-
 ```
-The most hit netflix period by period is between `r scales::percent(min(top_by_period$share), accuracy = 0.1)`, `r scales::percent(max(top_by_period$share), accuracy = 0.1)`, indicating viewing netflix scatters a lot
-
-Squid Game: Season 2 is successively top 1 in two period, indicating squid game opens late of 2024H2 `r format(squid_release, "%Y-%m-%d")` and last their popularity over two periods.
-
-Period 2023H1 has the most largest number of distinct titles, which is almost triple time to 2023H2 because after 2023H2 netflix seperates data tv and film, so we cannot read film sheet. That is why we cannot compare 2023H1 and other period directly. After that the number of distinct title become bigger over period. Except period 2023H1, total runtime is increased over period with low missing value percentage, indicating making tv catalog in netflix being longer time.
-
-By using min standard instead of mean, I want to eliminate the effect of specific period popularity and select title that shows over all periods. There are three Breaking Bad seasons and two Suit seasons, indicating people watch netflix series not just one seasons, but whole seasons. 
-
-We split movies and shows by having title "Season" or running time is over 4 hours. Only period 2023H1 includes shows and movies in one sheet, so shows occupy `r scales::percent(show_share$show_share[show_share$period == "2023H1"], accuracy = 0.1)` and movies occupy `r scales::percent(show_share$movie_share[show_share$period == "2023H1"], accuracy = 0.1)`. However, other periods split shows and movies data. The low percentage of movies in later periods reflects missing data rather than actual viewing behavior, making comparisons across periods unreliable.
-
 Mean wathcing time of live content is `r scales::comma(live_compare$mean_hours[live_compare$content_type == "Live"])` hours, but mean pre-taped watching is `r scales::comma(live_compare$mean_hours[live_compare$content_type == "Pre-taped"])` hours. However, median of wathcing live content and pre-taped are `r scales::comma(live_compare$median_hours[live_compare$content_type == "Live"])` hours and `r scales::comma(live_compare$median_hours[live_compare$content_type == "Pre-taped"])` hours, indicating pre-taped shows has big outliers. Top pre-taped watching hours are `r scales::comma(live_compare$top_hours[live_compare$content_type == "Pre-taped"])` hours which is triple times than live-content.
+
