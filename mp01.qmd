@@ -5,7 +5,14 @@ format:
   html:
     code-fold: true
     toc: true
+execute:
+  warning: false
+  message: false
 ---
+
+## Introduction
+This report handles the data sets that are published by Netflix named "What We Watched" and contains data from 2023H1 to 2026H1. I organized the data sets and analyzed which contents account for the viewing hours and understand the global situations. The end of the report suggest future strategy to Netflix strategy team to develop future profitability. 
+
 ```{r}
 load_netflix_data <- function(){
  library(tidyverse)
@@ -214,7 +221,6 @@ By using min standard instead of mean, I want to eliminate the effect of specifi
 ```{r}
 netflix_type = NETFLIX_DATA |> mutate(type = if_else(str_detect(title, "Season") | (!is.na(runtime) & runtime > 240),
 "Show", "Movie"))
-netflix_type |> count(type)
 
 show_share = netflix_type |> summarize(show_share = sum(hours_viewed[type == "Show"]) / sum(hours_viewed),
              .by = period) |>mutate(movie_share = 1 - show_share)
@@ -240,3 +246,40 @@ live_compare |> gt() |> tab_header(title = "Live Events vs Pre-taped Content",
 ```
 Mean wathcing time of live content is `r scales::comma(live_compare$mean_hours[live_compare$content_type == "Live"])` hours, but mean pre-taped watching is `r scales::comma(live_compare$mean_hours[live_compare$content_type == "Pre-taped"])` hours. However, median of wathcing live content and pre-taped are `r scales::comma(live_compare$median_hours[live_compare$content_type == "Live"])` hours and `r scales::comma(live_compare$median_hours[live_compare$content_type == "Pre-taped"])` hours, indicating pre-taped shows has big outliers. Top pre-taped watching hours are `r scales::comma(live_compare$top_hours[live_compare$content_type == "Pre-taped"])` hours which is triple times than live-content.
 
+## Calculation Support
+```{r}
+top10_by_period = NETFLIX_DATA |> mutate(rank = min_rank(desc(hours_viewed)), .by = period) |>
+  summarize(top10_share = sum(hours_viewed[rank <= 10]) / sum(hours_viewed),.by = period)
+
+top10_min = min(top10_by_period$top10_share)
+top10_max = max(top10_by_period$top10_share)
+
+staple_total = staples$mean_hours[1] * n_distinct(NETFLIX_DATA$period)
+staple_name  = staples$title[1]
+biggest_hit  = max(top_by_period$hours_viewed)
+biggest_name = top_by_period$title[which.max(top_by_period$hours_viewed)]
+
+
+global_avg = NETFLIX_DATA |> filter(!is.na(available_globally)) |>
+  summarize(avg_hours = mean(hours_viewed), .by = available_globally)
+
+global_avg_hours   = global_avg$avg_hours[global_avg$available_globally]
+regional_avg_hours = global_avg$avg_hours[!global_avg$available_globally]
+global_multiple    = global_avg_hours / regional_avg_hours
+```
+
+## Strategy Memo
+Dear Netflix Strategy Team
+
+The top 10 most-watched titles account for only `r scales::percent(top10_min, accuracy = 0.1)`–`r scales::percent(top10_max, accuracy = 0.1)` of total viewing hours in each half-year, while the remaining titles account for over `r scales::percent(1 - top10_max, accuracy = 1)`. Escobar appeared in all seven periods, while Wednesday S2 appeared only once. It shows the importance of both consistent popularity and short-term hits.
+
+Global titles account for `r scales::percent(pct_global, accuracy = 0.1)` of all titles and `r scales::percent(global_by_hours, accuracy = 0.1)` of viewing hours. It is approximately `r round(global_multiple, 1)` times the average viewing hours per title compared to non-global titles.
+
+Therefore, Netflix should continuously release diverse content rather than focus only on major hits. Expanding global content production and developing popular titles into series could help maintain long-term viewing hours and improve profitability.
+
+Sincerely,
+Deokkyun Han
+
+::: {.callout-note title="AI Usage Statement" collapse="true"}
+I used Claude to assist with writing code for Tasks 5–6 such as creating the gt tables, and debugging errors throughout the analysis. When I found that 2023 H1 had three times more titles than other periods, Claude suggested checking the Excel sheet structure and data loading process. As a result, I discovered that the Film sheet had not been loaded properly since 2023 H2. Claude suggested ranking titles that appeared in all seven periods based on their minimum viewing hours rather than average viewing hours. This helped identify titles that maintained consistently high viewing hours over time. When comparing live and pre-taped content, Claude suggested using the 90th percentile of viewing hours as the threshold for top-tier titles. This allowed me to compare the most-watched titles in both categories using the same standard. I independently interpreted the results and wrote the analysis paragraphs and final memo myself.
+:::
