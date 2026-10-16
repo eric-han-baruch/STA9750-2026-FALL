@@ -278,6 +278,7 @@ Global titles account for `r scales::percent(pct_global, accuracy = 0.1)` of all
 Therefore, Netflix should continuously release diverse content rather than focus only on major hits. Expanding global content production and developing popular titles into series could help maintain long-term viewing hours and improve profitability.
 
 Sincerely,
+
 Deokkyun Han
 
 ::: {.callout-note title="AI Usage Statement" collapse="true"}
