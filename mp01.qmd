@@ -104,18 +104,18 @@ skim(NETFLIX_DATA)
 ```
 
 ```{r}
-n_rows <- nrow(NETFLIX_DATA)
-n_titles <- n_distinct(NETFLIX_DATA$title)
-n_periods <- n_distinct(NETFLIX_DATA$period)
-start_date <- min(NETFLIX_DATA$period_start)
-end_date <- max(NETFLIX_DATA$period_end)
-pct_rel_na <- mean(is.na(NETFLIX_DATA$release_date))
-pct_views_na <- mean(is.na(NETFLIX_DATA$views))
-pct_run_na <- mean(is.na(NETFLIX_DATA$runtime))
-pct_global <- mean(NETFLIX_DATA$available_globally, na.rm = TRUE)
-pct_live <- mean(NETFLIX_DATA$live_event)
-mean_hours <- mean(NETFLIX_DATA$hours_viewed)
-median_hours <- median(NETFLIX_DATA$hours_viewed)
+n_rows = nrow(NETFLIX_DATA)
+n_titles = n_distinct(NETFLIX_DATA$title)
+n_periods = n_distinct(NETFLIX_DATA$period)
+start_date = min(NETFLIX_DATA$period_start)
+end_date = max(NETFLIX_DATA$period_end)
+pct_rel_na = mean(is.na(NETFLIX_DATA$release_date))
+pct_views_na = mean(is.na(NETFLIX_DATA$views))
+pct_run_na = mean(is.na(NETFLIX_DATA$runtime))
+pct_global = mean(NETFLIX_DATA$available_globally, na.rm = TRUE)
+pct_live = mean(NETFLIX_DATA$live_event)
+mean_hours = mean(NETFLIX_DATA$hours_viewed)
+median_hours = median(NETFLIX_DATA$hours_viewed)
 ```
 
 Total number of rows are `r n_rows`, numbers of distinct title are `r n_titles` which means one netflix title are calculated multiple time in multiple period. 
