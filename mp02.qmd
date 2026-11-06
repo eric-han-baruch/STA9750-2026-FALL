@@ -634,4 +634,8 @@ MODE_EMISSIONS |>
 
 ## AI Usage
 
-I used Claude to help with R coding and debugging when I ran into errors. I also used it to better understand some of the results. I reviewed the suggestions and checked the results before including them in my report.
+::: {.callout-note title="AI Usage Statement" collapse="true"}
+
+I used Claude throughout this project to help with R coding and debugging. It helped me combine the NTD and EIA datasets and write code to calculate CO₂ emissions. I also used it to create tables and graphs to compare transit agencies and transportation types. When I had trouble finding the right emission factors, I used Claude to help me understand the EIA data. It also helped me fix errors when downloading data and rendering my Quarto report. I used its suggestions to display some of my results directly from R instead of entering the numbers manually.
+
+:::
