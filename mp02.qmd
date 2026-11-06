@@ -12,17 +12,17 @@ execute:
 
 ## Introduction
 
-As the Executive Director of Green Transit Alliance (GTA) I want to find the most environmentally friendly transit agencies in the US. Not all public transportation is equally clean because fuel use and passenger numbers are different. I used NTD and EIA data to calculate CO₂ emissions per passenger mile and compare transit agencies fairly.
+As the Executive Director of Green Transit Alliance (GTA) I want to find the most environmentally friendly transit agencies in the US. Not all public transportation is equally clean because fuel use and passenger numbers are different. I used NTD and EIA data to calculate CO2 emissions per passenger mile and compare transit agencies fairly.
 
 ## Data Acquisition
 
 ### State Electricity Profiles
 
-I used EIA data to look at electricity prices and CO₂ emissions in each state. The data also shows the main sources of electricity generation.
+I used EIA data to look at electricity prices and CO2 emissions in each state. The data also shows the main sources of electricity generation.
 
 ### NTD Energy Consumption
 
-I used 2025 NTD data to see how much fuel and electricity each transit agency used. This data helps calculate their CO₂ emissions.
+I used 2025 NTD data to see how much fuel and electricity each transit agency used. This data helps calculate their CO2 emissions.
 
 ### NTD Service
 
@@ -35,23 +35,23 @@ library(stringr)
 library(httr2)
 library(rvest)
 
-get_eia_sep <- function(state, abbr){
+get_eia_sep = function(state, abbr){
     library(tidyverse)
     library(stringr)
     library(httr2)
     library(rvest)
     library(fs)
   
-    state_formatted <- str_to_lower(state) |> str_replace_all("\\s", "")
+    state_formatted = str_to_lower(state) |> str_replace_all("\\s", "")
     
-    dir_name <- fs::path("data", "mp02")
-    file_name <- fs::path(dir_name, state_formatted)
+    dir_name = fs::path("data", "mp02")
+    file_name = fs::path(dir_name, state_formatted)
     
     fs::dir_create(dir_name, recurse=TRUE)
     
     if(!fs::file_exists(file_name)){
-        BASE_URL <- "https://www.eia.gov"
-        RESPONSE <- request(BASE_URL) |> 
+        BASE_URL = "https://www.eia.gov"
+        RESPONSE = request(BASE_URL) |> 
           req_url_path("electricity", 
                        "state", 
                        state_formatted) |>
@@ -66,31 +66,31 @@ get_eia_sep <- function(state, abbr){
         resp_check_status(RESPONSE)
     }
     
-    TABLE <- read_html(file_name) |> 
+    TABLE = read_html(file_name) |> 
         html_element("table") |> 
         html_table() |>
         mutate(Item = str_to_lower(Item))
     
     if("U.S. rank" %in% colnames(TABLE)){
-        TABLE <- TABLE |> rename(Rank = `U.S. rank`)
+        TABLE = TABLE |> rename(Rank = `U.S. rank`)
     }
     
-    CO2_MWh <- TABLE |> 
+    CO2_MWh = TABLE |> 
         filter(Item == "carbon dioxide (lbs/mwh)") |>
         pull(Value) |> 
         str_replace_all(",", "") |>
         as.numeric()
     
-    PRIMARY <- TABLE |> 
+    PRIMARY = TABLE |> 
         filter(Item == "primary energy source") |> 
         pull(Rank)
     
-    RATE <- TABLE |>
+    RATE = TABLE |>
         filter(Item == "average retail price (cents/kwh)") |>
         pull(Value) |>
         as.numeric()
     
-    GENERATION_MWh <- TABLE |>
+    GENERATION_MWh = TABLE |>
         filter(Item == "net generation (megawatthours)") |>
         pull(Value) |>
         str_replace_all(",", "") |>
@@ -105,22 +105,22 @@ get_eia_sep <- function(state, abbr){
     )
 }
 
-EIA_SEP_REPORT <- map2(state.name, state.abb, get_eia_sep) |> list_rbind()
+EIA_SEP_REPORT = map2(state.name, state.abb, get_eia_sep) |> list_rbind()
 
 ```
 
 #### NTD Energy Consumption
 ```{r}
-load_ntd_energy <- function(){
+load_ntd_energy = function(){
   library(readxl)
   library(httr2)
   library(tidyverse)
   library(fs)
   
-  DATA_DIR <- fs::path("data", "mp02")
+  DATA_DIR = fs::path("data", "mp02")
   fs::dir_create(DATA_DIR, recurse=TRUE)
 
-  NTD_ENERGY_FILE <- fs::path(DATA_DIR, "2025_ntd_energy.xlsx")
+  NTD_ENERGY_FILE = fs::path(DATA_DIR, "2025_ntd_energy.xlsx")
 
   if(!fs::file_exists(NTD_ENERGY_FILE)){
     request("https://www.transit.dot.gov/") |>
@@ -136,8 +136,8 @@ load_ntd_energy <- function(){
     stop("Download failed. Please delete the corrupted file by running `unlink('data/mp02/2025_ntd_energy.xlsx')` and try again.")
   }
 
-  to_numeric_fill_0 <- function(x){
-    x <- if_else(x == "-", NA, x)
+  to_numeric_fill_0 = function(x){
+    x = if_else(x == "-", NA, x)
     replace_na(as.numeric(x), 0)
   }
 
@@ -153,20 +153,20 @@ load_ntd_energy <- function(){
     ungroup()
 }
 
-NTD_ENERGY <- load_ntd_energy()
+NTD_ENERGY = load_ntd_energy()
 ```
 
 #### NTD Service
 ```{r}
-load_ntd_service <- function(){
+load_ntd_service = function(){
   library(httr2)
   library(tidyverse)
   library(fs)
   
-  DATA_DIR <- fs::path("data", "mp02")
+  DATA_DIR = fs::path("data", "mp02")
   fs::dir_create(DATA_DIR, recurse=TRUE)
 
-  NTD_SERVICE_FILE <- fs::path(DATA_DIR, "2025_ntd_service.csv")
+  NTD_SERVICE_FILE = fs::path(DATA_DIR, "2025_ntd_service.csv")
 
   if(!fs::file_exists(NTD_SERVICE_FILE)){
     request("https://data.transportation.gov/resource/4fir-qbim.csv") |>
@@ -203,7 +203,7 @@ load_ntd_service <- function(){
     mutate(flagged_likely_inaccurate = !is.na(flagged_likely_inaccurate))
 }
 
-NTD_SERVICE <- load_ntd_service()
+NTD_SERVICE = load_ntd_service()
 ```
 
 ## Data Cleaning 
@@ -212,7 +212,7 @@ NTD_SERVICE <- load_ntd_service()
 NTD_ENERGY |> distinct(Mode)
 ```
 ```{r}
-recode_mode <- function(x) {
+recode_mode = function(x) {
   recode_values(x,
     "MB" ~ "Bus",
     "CB" ~ "Commuter Bus",
@@ -238,8 +238,8 @@ recode_mode <- function(x) {
   )
 }
 
-NTD_ENERGY  <- NTD_ENERGY  |> mutate(Mode = recode_mode(Mode))
-NTD_SERVICE <- NTD_SERVICE |> mutate(mode = recode_mode(mode))
+NTD_ENERGY  = NTD_ENERGY  |> mutate(Mode = recode_mode(Mode))
+NTD_SERVICE = NTD_SERVICE |> mutate(mode = recode_mode(mode))
 ```
 
 ## Exploratory Data Analysis
@@ -281,18 +281,16 @@ EIA_SEP_REPORT |>
   tab_header(title = "Five States with the Dirtiest Electricity Mix")
 ```
 
-#### Which five states have the dirtiest electricity mix?
-
 West Virginia has the highest CO2 emissions at 1,912 lbs per MWh, followed by Kentucky (1,744) and Wyoming (1,724). Missouri and Hawaii also have high emissions at 1,456 and 1,426 lbs per MWh. Four of these five states use coal as their main source of electricity, while Hawaii mainly uses petroleum. This shows that states relying on fossil fuels tend to have higher CO2 emissions. Hawaii is also interesting because it has both high electricity prices and high CO2 emissions, which may be related to its dependence on petroleum. 
 
 ```{r}
-us_avg_co2 <- EIA_SEP_REPORT |>
+us_avg_co2 = EIA_SEP_REPORT |>
   summarize(avg = sum(CO2_MWh * generation_MWh) / sum(generation_MWh)) |>
   pull(avg)
 
-tx_co2 <- EIA_SEP_REPORT |> filter(abbreviation == "TX") |> pull(CO2_MWh)
-ny_co2 <- EIA_SEP_REPORT |> filter(abbreviation == "NY") |> pull(CO2_MWh)
-tx_ny_ratio <- tx_co2 / ny_co2
+tx_co2 = EIA_SEP_REPORT |> filter(abbreviation == "TX") |> pull(CO2_MWh)
+ny_co2 = EIA_SEP_REPORT |> filter(abbreviation == "NY") |> pull(CO2_MWh)
+tx_ny_ratio = tx_co2 / ny_co2
 ```
 
 #### On average, how many pounds of CO2 are emitted per MWh in the US?
@@ -327,20 +325,20 @@ NTD_ENERGY |>
 #### What is the least commonly used fuel source?
 
 ```{r}
-fuel_usage <- NTD_ENERGY |>
+fuel_usage = NTD_ENERGY |>
   select(-`Bio-Diesel Description`) |>
   pivot_longer(-c(`NTD ID`, Mode, `Agency Name`),
                names_to = "fuel", values_to = "amount") |>
   group_by(fuel) |>
   summarize(n_users = sum(amount > 0)) |>
   mutate(fuel = str_remove(fuel, "^(Gallons|Kilowatt hours|Kilograms) of "))
-least_fuel <- fuel_usage |>
+least_fuel = fuel_usage |>
   filter(n_users > 0) |>
   slice_min(n_users, n = 1)
 
-unused_fuels <- fuel_usage |> filter(n_users == 0) |> pull(fuel)
+unused_fuels = fuel_usage |> filter(n_users == 0) |> pull(fuel)
 
-lng_user <- NTD_ENERGY |>
+lng_user = NTD_ENERGY |>
   filter(`Gallons of Liquified Nat Gas` > 0) |>
   select(`Agency Name`, Mode, `Gallons of Liquified Nat Gas`)
 ```
@@ -370,7 +368,7 @@ MTA New York City Transit (Heavy Rail) has the highest number of annual passenge
 #### Are all states represented in this data?
 
 ```{r}
-missing_states <- tibble(abb = state.abb, name = state.name) |>
+missing_states = tibble(abb = state.abb, name = state.name) |>
   anti_join(NTD_SERVICE |> distinct(state), by = c("abb" = "state"))
 ```
 
@@ -380,19 +378,19 @@ Yes, all `r 50 - nrow(missing_states)` states are represented in the dataset.
 
 
 ```{r}
-LBS_DIESEL    <- 22.45
-LBS_GASOLINE  <- 18.73
-LBS_BIODIESEL <- 22.45 * 0.8      
-LBS_BUNKER    <- 24.78            
-LBS_CNG       <- 116.65 * 0.114   
-LBS_LNG       <- 116.65 * 0.0827  
-LBS_LPG       <- 12.68            
-LBS_KEROSENE  <- 21.78
+LBS_DIESEL    = 22.45
+LBS_GASOLINE  = 18.73
+LBS_BIODIESEL = 22.45 * 0.8      
+LBS_BUNKER    = 24.78            
+LBS_CNG       = 116.65 * 0.114   
+LBS_LNG       = 116.65 * 0.0827  
+LBS_LPG       = 12.68            
+LBS_KEROSENE  = 21.78
 
 # Ethanol & hydrogen: no tailpipe CO2 (0)
 
 # - Step 1: collapse service data to one row per Agency + Mode -
-SERVICE_BY_MODE <- NTD_SERVICE |>
+SERVICE_BY_MODE = NTD_SERVICE |>
   mutate(NTD_ID = as.numeric(NTD_ID)) |>
   group_by(NTD_ID, mode) |>
   summarize(agency          = first(AGENCY),
@@ -402,7 +400,7 @@ SERVICE_BY_MODE <- NTD_SERVICE |>
             .groups = "drop")
 
 # - Step 2: join energy + service + state electricity profiles -
-EMISSIONS <- NTD_ENERGY |>
+EMISSIONS = NTD_ENERGY |>
   inner_join(SERVICE_BY_MODE,
              by = c("NTD ID" = "NTD_ID", "Mode" = "mode")) |>
   inner_join(EIA_SEP_REPORT |> select(abbreviation, CO2_MWh),
@@ -430,7 +428,7 @@ I combined the three datasets by transit agency and transportation mode to calcu
 ## Normalizing Emissions by Ridership
 
 ```{r}
-AGENCY_EMISSIONS <- EMISSIONS |>
+AGENCY_EMISSIONS = EMISSIONS |>
   group_by(`NTD ID`, agency, state) |>
   summarize(co2_lbs         = sum(co2_lbs),
             upt             = sum(upt),
@@ -448,7 +446,7 @@ AGENCY_EMISSIONS <- EMISSIONS |>
     ),
     size = factor(size, levels = c("Small", "Medium", "Large"))
   )
-SIZE_MEDIANS <- AGENCY_EMISSIONS |>
+SIZE_MEDIANS = AGENCY_EMISSIONS |>
   group_by(size) |>
   summarize(median_per_upt = median(co2_per_upt),
             median_per_pmt = median(co2_per_pmt),
@@ -482,7 +480,7 @@ Seattle Center Monorail has the lowest CO2 emissions per passenger mile among sm
 ### Greenest Transit Agency
 
 ```{r}
-GREENEST <- AGENCY_EMISSIONS |>
+GREENEST = AGENCY_EMISSIONS |>
   group_by(size) |>
   slice_min(co2_per_pmt, n = 1) |>
   ungroup() |>
@@ -512,7 +510,7 @@ I compared CO2 emissions per passenger mile and divided the agencies into three 
 
 ```{r}
 #| label: award-mode
-MODE_EMISSIONS <- EMISSIONS |>
+MODE_EMISSIONS = EMISSIONS |>
   filter(passenger_miles > 0) |>
   group_by(Mode) |>
   summarize(n_services      = n(),
@@ -521,14 +519,14 @@ MODE_EMISSIONS <- EMISSIONS |>
             .groups = "drop") |>
   mutate(co2_per_pmt = co2_lbs / passenger_miles)
 
-MODE_TOP3 <- MODE_EMISSIONS |>
+MODE_TOP3 = MODE_EMISSIONS |>
   filter(n_services >= 5) |>
   slice_min(co2_per_pmt, n = 3)
 
-ALL_MODES_AVG <- sum(MODE_EMISSIONS$co2_lbs) /
+ALL_MODES_AVG = sum(MODE_EMISSIONS$co2_lbs) /
                  sum(MODE_EMISSIONS$passenger_miles)
 
-WORST_MODE <- MODE_EMISSIONS |>
+WORST_MODE = MODE_EMISSIONS |>
   filter(n_services >= 5) |>
   slice_max(co2_per_pmt, n = 1)
 
@@ -557,15 +555,15 @@ I compared CO2 emissions per passenger mile across different types of transit se
 
 NEW YORK, November 2026
 
-Green Transit Alliance (GTA) announced the greenest transit agencies and transportation types in the US using 2025 data. The study compared CO₂ emissions per passenger mile to find which services are the most environmentally friendly.
+Green Transit Alliance (GTA) announced the greenest transit agencies and transportation types in the US using 2025 data. The study compared CO2 emissions per passenger mile to find which services are the most environmentally friendly.
 
 #### Greenest Transit Agencies
 
-GTA divided transit agencies into small, medium and large groups based on annual ridership. Seattle Center Monorail ranked first among small agencies with 0.064 lbs of CO₂ per passenger mile. This is about 19 times lower than the group median. Anaheim Regional Transportation ranked first among medium agencies at 0.138 lbs and TriMet led large agencies at 0.097 lbs. Their emissions were about 6 and 4 times lower than their group medians.
+GTA divided transit agencies into small, medium and large groups based on annual ridership. Seattle Center Monorail ranked first among small agencies with 0.064 lbs of CO2 per passenger mile. This is about 19 times lower than the group median. Anaheim Regional Transportation ranked first among medium agencies at 0.138 lbs and TriMet led large agencies at 0.097 lbs. Their emissions were about 6 and 4 times lower than their group medians.
 
 #### Greenest Transportation Types
 
-GTA compared transportation types with at least five services. Heavy Rail had the lowest emissions at 0.157 lbs per passenger mile. Vanpool came second at 0.191 lbs followed by Light Rail at 0.311 lbs. Heavy Rail produced about three times less CO₂ than the overall transit average of 0.475 lbs. Demand Response and Ferry had the highest emissions at around 2.1 lbs per passenger mile. This is almost three times the emissions from driving alone.
+GTA compared transportation types with at least five services. Heavy Rail had the lowest emissions at 0.157 lbs per passenger mile. Vanpool came second at 0.191 lbs followed by Light Rail at 0.311 lbs. Heavy Rail produced about three times less CO2 than the overall transit average of 0.475 lbs. Demand Response and Ferry had the highest emissions at around 2.1 lbs per passenger mile. This is almost three times the emissions from driving alone.
 
 #### About GTA
 
@@ -573,7 +571,7 @@ Green Transit Alliance (GTA) studies the environmental impact of public transpor
 
 
 ```{r}
-#| label: fig-greenest-agency
+#| label: plot-greenest-agency
 #| fig-width: 9
 #| fig-height: 4.5
 GREENEST |>
@@ -602,8 +600,8 @@ GREENEST |>
 ```
 
 ```{r}
-CAR_MPG <- 25
-CAR_PMT <- LBS_GASOLINE / CAR_MPG 
+CAR_MPG = 25
+CAR_PMT = LBS_GASOLINE / CAR_MPG 
 
 MODE_EMISSIONS |>
   filter(n_services >= 5) |>
@@ -636,6 +634,6 @@ MODE_EMISSIONS |>
 
 ::: {.callout-note title="AI Usage Statement" collapse="true"}
 
-I used Claude throughout this project to help with R coding and debugging. It helped me combine the NTD and EIA datasets and write code to calculate CO₂ emissions. I also used it to create tables and graphs to compare transit agencies and transportation types. When I had trouble finding the right emission factors, I used Claude to help me understand the EIA data. It also helped me fix errors when downloading data and rendering my Quarto report. I used its suggestions to display some of my results directly from R instead of entering the numbers manually.
+I used Claude throughout this project to help with R coding and debugging. It helped me combine the NTD and EIA datasets and write code to calculate CO2 emissions. I also used it to create tables and graphs to compare transit agencies and transportation types. When I had trouble finding the right emission factors, I used Claude to help me understand the EIA data. It also helped me fix errors when downloading data and rendering my Quarto report. I used its suggestions to display some of my results directly from R instead of entering the numbers manually.
 
 :::
